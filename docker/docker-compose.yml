@@ -1,0 +1,35 @@
+version: '3.7'
+services:
+  plan-service-api:
+    image: plan-service-api:latest
+    env_file:
+      - docker.env
+    build:
+      context: ../
+      dockerfile: ./docker/Dockerfile
+    restart: always
+    ports:
+      - '3090:3090'
+    volumes:
+      - ./plan-service-api-data:/plan-service-api
+    depends_on:
+      - plan-service-postgres
+    networks:
+      - remote-job-network
+
+  plan-service-postgres:
+    image: postgres:latest
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=remotejob
+    ports:
+      - '1090:5432'
+    volumes:
+      - ./plan-service-api-postgres-data:/var/lib/postgresql/data
+    networks:
+      - remote-job-network
+
+networks:
+  remote-job-network:
