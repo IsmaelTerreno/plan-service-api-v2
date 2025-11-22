@@ -32,13 +32,13 @@ class JsonDynamicConverter implements AttributeConverter<JsonNode, String> {
 
     @Override
     public JsonNode convertToEntityAttribute(String dbData) {
-        if (dbData == null) {
+        if (dbData == null || dbData.isBlank()) {
             return null;
         }
         try {
             return mapper.readTree(dbData);
         } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
+            throw new IllegalArgumentException("Failed to parse JSON string from database", e);
         }
     }
 }
