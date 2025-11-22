@@ -15,11 +15,11 @@ import java.util.UUID;
  */
 @Service
 public class PlanService {
-    private final PlanRepository jobRepository;
+    private final PlanRepository planRepository;
 
 
-    public PlanService(PlanRepository jobRepository) {
-        this.jobRepository = jobRepository;
+    public PlanService(PlanRepository planRepository) {
+        this.planRepository = planRepository;
     }
 
     /**
@@ -28,7 +28,7 @@ public class PlanService {
      * @return A list of all jobs available in the repository.
      */
     public List<Plan> findAll() {
-        return this.jobRepository.findAll();
+        return this.planRepository.findAll();
     }
 
     /**
@@ -38,7 +38,7 @@ public class PlanService {
      * @return The saved Job object.
      */
     public Plan createOrUpdate(Plan plan) {
-        return this.jobRepository.save(plan);
+        return this.planRepository.save(plan);
     }
 
     /**
@@ -47,7 +47,7 @@ public class PlanService {
      * @param id The UUID of the job to delete.
      */
     public void delete(UUID id) {
-        this.jobRepository.deleteById(id);
+        this.planRepository.deleteById(id);
     }
 
     /**
@@ -57,7 +57,7 @@ public class PlanService {
      * @return An Optional containing the Job if found, or an empty Optional if not found.
      */
     public Optional<Plan> getJobById(UUID id) {
-        return this.jobRepository.findById(id);
+        return this.planRepository.findById(id);
     }
 
     /**
@@ -67,18 +67,6 @@ public class PlanService {
      * @return A list of jobs associated with the specified user ID.
      */
     public List<Plan> getJobsByUserId(String userId) {
-        return this.jobRepository.findByUserId(userId);
-    }
-
-    /**
-     * Retrieves a list of jobs that match the given search text.
-     *
-     * @param search The string to be used as the search criteria. Spaces in the string will be replaced
-     *               with " & " for full-text search syntax compatibility.
-     * @return A list of jobs that match the search criteria.
-     */
-    public List<Plan> getJobsBySearch(String search) {
-        String sanitizedSearch = search.replace(" ", " & ");
-        return this.jobRepository.findBySearch(sanitizedSearch);
+        return this.planRepository.findByUserId(userId);
     }
 }
