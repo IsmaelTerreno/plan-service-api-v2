@@ -1,11 +1,11 @@
-package com.remotejob.jobservice.utils;
+package com.remotejob.planservice.utils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
-import com.remotejob.jobservice.dto.CreateRequest;
-import com.remotejob.jobservice.dto.ResponseAPI;
+import com.remotejob.planservice.dto.CreateRequest;
+import com.remotejob.planservice.dto.ResponseAPI;
 import lombok.Getter;
 import lombok.Setter;
 import org.json.JSONObject;

@@ -1,4 +1,4 @@
-package com.remotejob.jobservice.entity;
+package com.remotejob.planservice.entity;
 
 
 import com.fasterxml.jackson.core.JsonProcessingException;

@@ -1,4 +1,4 @@
-package com.remotejob.jobservice.security;
+package com.remotejob.planservice.security;
 
 /**
  * Exception thrown when an authentication-related error occurs.

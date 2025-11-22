@@ -1,7 +1,7 @@
-package com.remotejob.jobservice.service;
+package com.remotejob.planservice.service;
 
-import com.remotejob.jobservice.entity.Plan;
-import com.remotejob.jobservice.repository.PlanRepository;
+import com.remotejob.planservice.entity.Plan;
+import com.remotejob.planservice.repository.PlanRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;

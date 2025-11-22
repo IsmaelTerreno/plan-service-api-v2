@@ -1,4 +1,4 @@
-package com.remotejob.jobservice.entity;
+package com.remotejob.planservice.entity;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import io.hypersistence.utils.hibernate.type.json.JsonBinaryType;

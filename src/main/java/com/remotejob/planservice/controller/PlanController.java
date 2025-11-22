@@ -1,8 +1,8 @@
-package com.remotejob.jobservice.controller;
+package com.remotejob.planservice.controller;
 
-import com.remotejob.jobservice.dto.ResponseAPI;
-import com.remotejob.jobservice.entity.Plan;
-import com.remotejob.jobservice.service.PlanService;
+import com.remotejob.planservice.dto.ResponseAPI;
+import com.remotejob.planservice.entity.Plan;
+import com.remotejob.planservice.service.PlanService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;

@@ -1,4 +1,4 @@
-package com.remotejob.jobservice.dto;
+package com.remotejob.planservice.dto;
 
 import lombok.Getter;
 import lombok.Setter;

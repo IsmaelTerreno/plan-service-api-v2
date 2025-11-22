@@ -1,9 +1,9 @@
-package com.remotejob.jobservice;
+package com.remotejob.planservice;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.remotejob.jobservice.entity.Plan;
-import com.remotejob.jobservice.utils.TestUtils;
+import com.remotejob.planservice.entity.Plan;
+import com.remotejob.planservice.utils.TestUtils;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;

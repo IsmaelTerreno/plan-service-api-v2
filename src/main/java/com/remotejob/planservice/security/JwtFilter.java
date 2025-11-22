@@ -1,4 +1,4 @@
-package com.remotejob.jobservice.security;
+package com.remotejob.planservice.security;
 
 
 import io.jsonwebtoken.Claims;
