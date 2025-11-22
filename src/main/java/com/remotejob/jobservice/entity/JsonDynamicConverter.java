@@ -27,11 +27,21 @@ class JsonDynamicConverter implements AttributeConverter<JsonNode, String> {
 
     @Override
     public String convertToDatabaseColumn(JsonNode attribute) {
-        return attribute.asText();
+        if (attribute == null || attribute.isNull()) {
+            return null;
+        }
+        try {
+            return mapper.writeValueAsString(attribute);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
     public JsonNode convertToEntityAttribute(String dbData) {
+        if (dbData == null) {
+            return null;
+        }
         try {
             return mapper.readTree(dbData);
         } catch (JsonProcessingException e) {

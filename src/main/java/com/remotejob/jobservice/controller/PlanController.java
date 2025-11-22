@@ -82,8 +82,6 @@ public class PlanController {
     @PreAuthorize("hasAuthority('USER')")
     @PostMapping()
     public ResponseAPI<Plan> createJob(@RequestBody Plan plan) {
-        plan.setCreatedAt(System.currentTimeMillis());
-        plan.setUpdatedAt(System.currentTimeMillis());
         return new ResponseAPI<>(
                 "Success",
                 jobService.createOrUpdate(plan)

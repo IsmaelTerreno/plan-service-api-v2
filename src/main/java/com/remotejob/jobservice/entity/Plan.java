@@ -6,10 +6,11 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.Type;
 
+import java.time.Instant;
 import java.util.UUID;
 
 /**
- * Class representing a job entity, typically used for job postings.
+ * Subscription Plan entity mirroring the NestJS `plans` table schema.
  */
 @Getter
 @Setter
@@ -23,36 +24,30 @@ public class Plan {
     @Column(name = "id", updatable = false, nullable = false)
     @EqualsAndHashCode.Include
     private UUID id;
+
     @Column(name = "user_id", nullable = false)
     private String userId;
-    @Column(name = "company_id")
-    private String companyId;
-    @Column(name = "title", nullable = false)
-    private String title;
-    @Column(name = "category", nullable = false)
-    private String category;
-    @Column(name = "type", nullable = false)
-    private String type;
+
+    @Column(name = "invoice_id", nullable = false)
+    private UUID invoiceId;
+
+    @Column(name = "description", nullable = false)
+    private String description;
+
+    @Column(name = "is_active", nullable = false)
+    private Boolean isActive;
+
     @Convert(converter = JsonDynamicConverter.class)
     @Type(JsonBinaryType.class)
-    @Column(name = "detail", columnDefinition = "jsonb")
-    private JsonNode detail;
-    @Column(name = "regional_restrictions")
-    private String regionalRestrictions;
-    @Column(name = "benefits")
-    private String benefits;
-    @Column(name = "how_to_apply", nullable = false)
-    private String howToApply;
-    @Column(name = "salary_from")
-    private Integer salaryFrom;
-    @Column(name = "salary_to")
-    private Integer salaryTo;
-    @Column(name = "priority_result")
-    private Integer priorityResult;
-    // Creation date of the job with default value of current time
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private Long createdAt;
-    // Last update date of the job
-    @Column(name = "updated_at", nullable = false)
-    private Long updatedAt;
+    @Column(name = "items", columnDefinition = "jsonb", nullable = false)
+    private JsonNode items;
+
+    @Column(name = "status", nullable = false)
+    private String status;
+
+    @Column(name = "duration_in_days", nullable = false)
+    private Integer durationInDays;
+
+    @Column(name = "expires_at")
+    private Instant expiresAt; // nullable
 }
