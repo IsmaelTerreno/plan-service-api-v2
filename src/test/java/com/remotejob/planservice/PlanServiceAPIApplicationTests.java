@@ -1,268 +1,150 @@
 package com.remotejob.planservice;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.remotejob.planservice.entity.Plan;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.remotejob.planservice.dto.PlanDto;
 import com.remotejob.planservice.utils.TestUtils;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
+import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 
 /**
- * This class contains unit tests for the PlanService application.
- * It extends the TestUtils class to utilize common test utilities.
+ * Updated tests aligned with the migrated Plan API (DTO-based, secured endpoints).
  */
 class PlanServiceAPIApplicationTests extends TestUtils {
 
     @Test
-    void shouldGetPublicSearch() throws Exception {
-        // Get JWT token
-        String JWT = this.registerUserAndGetJWT();
-        // Convert the newJob object into a JSON string
-        String newJobJson = convertToJson(setupTestPlan(new Plan()));
-        // Create a new plan
-        performPostRequest(newJobJson, "/api/v1/plan", JWT)
+    void shouldCreatePlan() throws Exception {
+        String jwt = this.registerUserAndGetJWT();
+        String body = convertToJson(buildTestPlanDto(null));
+
+        MvcResult responseCreated = performPostRequest(body, "/api/v1/plan", jwt)
+                .andDo(print())
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andReturn();
+
+        PlanDto created = getDataResponse(responseCreated, PlanDto.class);
+        assert created != null;
+        assert created.id != null;
+        assert created.userId != null;
+        assert created.invoiceId != null;
+    }
+
+    @Test
+    void shouldGetByIdPublic() throws Exception {
+        String jwt = this.registerUserAndGetJWT();
+        PlanDto newPlan = buildTestPlanDto(null);
+        String body = convertToJson(newPlan);
+
+        MvcResult createdRes = performPostRequest(body, "/api/v1/plan", jwt)
+                .andDo(print())
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andReturn();
+
+        PlanDto created = getDataResponse(createdRes, PlanDto.class);
+        String url = "/api/v1/plan/" + created.id;
+        MvcResult getRes = performGetRequest(url, "")
+                .andDo(print())
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andReturn();
+
+        PlanDto got = getDataResponse(getRes, PlanDto.class);
+        assert got != null;
+        assert created.id.equals(got.id);
+    }
+
+    @Test
+    void shouldGetByUserIdAuthenticated() throws Exception {
+        String jwt = this.registerUserAndGetJWT();
+        PlanDto newPlan = buildTestPlanDto(null);
+        String body = convertToJson(newPlan);
+
+        performPostRequest(body, "/api/v1/plan", jwt)
                 .andDo(print())
                 .andExpect(MockMvcResultMatchers.status().isOk());
-        // Get all jobs by text search
-        MvcResult responseSearch = performGetRequest("/api/v1/plan/search?textToSearch=Remote", "")
+
+        MvcResult listRes = performGetRequest("/api/v1/plan/user/" + newPlan.userId, jwt)
                 .andDo(print())
                 .andExpect(MockMvcResultMatchers.status().isOk())
                 .andReturn();
-        // Get jobs found from response
-        List<Plan> plans = getDataListResponse(responseSearch, Plan.class);
-        // Check that the jobs were found
-        assert !plans.isEmpty();
+
+        List<PlanDto> plans = getDataListResponse(listRes, PlanDto.class);
+        assert plans != null && !plans.isEmpty();
+        assert plans.stream().anyMatch(p -> newPlan.invoiceId.equals(p.invoiceId));
     }
 
     @Test
-    void shouldGetByUserId() throws Exception {
-        // Get JWT token
-        String JWT = this.registerUserAndGetJWT();
-        Plan newPlan = setupTestPlan(new Plan());
-        // Convert the newJob object into a JSON string
-        String newJobJson = convertToJson(newPlan);
-        // Create a new job
-        performPostRequest(newJobJson, "/api/v1/plan", JWT)
-                .andDo(print())
-                .andExpect(MockMvcResultMatchers.status().isOk());
-        // Get all jobs by text search
-        MvcResult responseSearch = performGetRequest("/api/v1/plan/user/" + newPlan.getUserId(), "")
+    void shouldUpdatePlan() throws Exception {
+        String jwt = this.registerUserAndGetJWT();
+        PlanDto newPlan = buildTestPlanDto(null);
+        String body = convertToJson(newPlan);
+
+        MvcResult createdRes = performPostRequest(body, "/api/v1/plan", jwt)
                 .andDo(print())
                 .andExpect(MockMvcResultMatchers.status().isOk())
                 .andReturn();
-        // Get jobs found from response
-        List<Plan> plans = getDataListResponse(responseSearch, Plan.class);
-        // Check that the jobs were found
-        assert !plans.isEmpty();
+        PlanDto created = getDataResponse(createdRes, PlanDto.class);
+
+        // Update a couple of fields
+        created.description = "Updated description";
+        created.isActive = Boolean.FALSE;
+        String updatedBody = convertToJson(created);
+
+        MvcResult updatedRes = performPutRequest(updatedBody, "/api/v1/plan", jwt)
+                .andDo(print())
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andReturn();
+
+        PlanDto updated = getDataResponse(updatedRes, PlanDto.class);
+        assert updated != null;
+        assert "Updated description".equals(updated.description);
+        assert Boolean.FALSE.equals(updated.isActive);
     }
 
     @Test
-    void shouldGetById() throws Exception {
-        // Get JWT token
-        String JWT = this.registerUserAndGetJWT();
-        Plan newPlan = setupTestPlan(new Plan());
-        // Convert the newJob object into a JSON string
-        String newJobJson = convertToJson(newPlan);
-        // Create a new job
-        MvcResult responseCreate = performPostRequest(newJobJson, "/api/v1/plan", JWT)
+    void shouldDeletePlan() throws Exception {
+        String jwt = this.registerUserAndGetJWT();
+        PlanDto newPlan = buildTestPlanDto(null);
+        String body = convertToJson(newPlan);
+
+        MvcResult createdRes = performPostRequest(body, "/api/v1/plan", jwt)
                 .andDo(print())
                 .andExpect(MockMvcResultMatchers.status().isOk())
                 .andReturn();
-        Plan createdPlan = getDataResponse(responseCreate, Plan.class);
-        String getJobByIdUrl = "/api/v1/plan/" + createdPlan.getId();
-        // Get all jobs by text search
-        MvcResult responseSearch = performGetRequest(getJobByIdUrl, "")
+        PlanDto created = getDataResponse(createdRes, PlanDto.class);
+
+        MvcResult deleteRes = performDeleteRequest("", "/api/v1/plan/" + created.id, jwt)
                 .andDo(print())
                 .andExpect(MockMvcResultMatchers.status().isOk())
                 .andReturn();
-        // Get job found from response
-        Plan plan = getDataResponse(responseSearch, Plan.class);
-        // Check that the job were found and the id is the same
-        assert plan.getId().equals(createdPlan.getId());
+
+        String message = getMessageResponse(deleteRes, PlanDto.class);
+        assert "Plan deleted successfully".equals(message);
     }
 
-    @Test
-    void shouldCreateJob() throws Exception {
-        // Get JWT token
-        String JWT = this.registerUserAndGetJWT();
-        // Convert the newJob object into a JSON string
-        String newJobJson = convertToJson(setupTestPlan(new Plan()));
-        // Create a new job
-        MvcResult responseCreated = performPostRequest(newJobJson, "/api/v1/plan", JWT)
-                .andDo(print())
-                .andExpect(MockMvcResultMatchers.status().isOk())
-                .andReturn();
-        // Get Job from response
-        Plan createdPlan = getDataResponse(responseCreated, Plan.class);
-        // Check that id is not null
-        assert createdPlan.getId() != null;
-    }
+    private PlanDto buildTestPlanDto(UUID id) throws Exception {
+        ObjectMapper mapper = new ObjectMapper();
+        ObjectNode items = mapper.createObjectNode();
+        items.put("planName", "basic");
+        items.put("seats", 1);
+        items.put("features", "none");
 
-    @Test
-    void shouldUpdateJob() throws Exception {
-        // Get JWT token
-        String JWT = this.registerUserAndGetJWT();
-        // Convert the newJob object into a JSON string
-        String newJobJson = convertToJson(setupTestPlan(new Plan()));
-        // Create a new job
-        MvcResult responseCreated = performPostRequest(newJobJson, "/api/v1/plan", JWT)
-                .andDo(print())
-                .andExpect(MockMvcResultMatchers.status().isOk())
-                .andReturn();
-        // Get Job from response
-        Plan createdPlan = getDataResponse(responseCreated, Plan.class);
-        // Update the title of the created job
-        createdPlan.setTitle("Remote Backend Javascript Engineer");
-        // Convert the createdJob object into a JSON string
-        String updatedJobJson = convertToJson(createdPlan);
-        // Update the job
-        MvcResult responseUpdate =
-                performPutRequest(updatedJobJson, "/api/v1/plan", JWT)
-                        .andDo(print())
-                        .andExpect(MockMvcResultMatchers.status().isOk())
-                        .andReturn();
-        // Get Job from response
-        Plan updatedPlan = getDataResponse(responseUpdate, Plan.class);
-        // Check that the title has been updated
-        assert updatedPlan.getTitle().equals("Remote Backend Javascript Engineer");
+        PlanDto dto = new PlanDto();
+        dto.id = id;
+        dto.userId = "user-" + generateRandomString(6);
+        dto.invoiceId = UUID.randomUUID();
+        dto.description = "Test plan";
+        dto.isActive = Boolean.TRUE;
+        dto.items = items;
+        dto.status = "CREATED";
+        dto.durationInDays = 30;
+        dto.expiresAt = Instant.now().plusSeconds(30L * 24 * 3600);
+        return dto;
     }
-
-    @Test
-    void shouldDeleteJob() throws Exception {
-        // Get JWT token
-        String JWT = this.registerUserAndGetJWT();
-        // Convert the newJob object into a JSON string
-        String newJobJson = convertToJson(setupTestPlan(new Plan()));
-        // Create a new job
-        MvcResult responseCreated = performPostRequest(newJobJson, "/api/v1/plan", JWT)
-                .andDo(print())
-                .andExpect(MockMvcResultMatchers.status().isOk())
-                .andReturn();
-        // Get Job from response
-        Plan createdPlan = getDataResponse(responseCreated, Plan.class);
-        // Convert the createdJob object into a JSON string
-        String updatedJobJson = convertToJson(createdPlan);
-        // Delete the job
-        MvcResult responseDelete =
-                performDeleteRequest(updatedJobJson, "/api/v1/plan/" + createdPlan.getId(), JWT)
-                        .andDo(print())
-                        .andExpect(MockMvcResultMatchers.status().isOk())
-                        .andReturn();
-        // Get Job from response
-        String deletedResponse = getMessageResponse(responseDelete, Plan.class);
-        // Check that the title has been updated
-        assert deletedResponse.equals("Plan deleted successfully");
-    }
-
-    /**
-     * Sets up a test Job object with predefined data values.
-     *
-     * @param planTest The Job object to be set up with test data.
-     * @return The Job object populated with test values.
-     */
-    private Plan setupTestPlan(Plan planTest) {
-        String title = "Remote Fullstack Javascript Engineer";
-        String detailString = "{" +
-                "    \"blocks\": [" +
-                "      {" +
-                "        \"key\": \"46ani\"," +
-                "        \"text\": \"Requirements\"," +
-                "        \"type\": \"unstyled\"," +
-                "        \"depth\": 0," +
-                "        \"inlineStyleRanges\": []," +
-                "        \"entityRanges\": []," +
-                "        \"data\": {}" +
-                "      }," +
-                "      {" +
-                "        \"key\": \"nbd9\"," +
-                "        \"text\": \"Previous experience as a full stack engineer\"," +
-                "        \"type\": \"unstyled\"," +
-                "        \"depth\": 0," +
-                "        \"inlineStyleRanges\": []," +
-                "        \"entityRanges\": []," +
-                "        \"data\": {}" +
-                "      }," +
-                "      {" +
-                "        \"key\": \"b4o7o\"," +
-                "        \"text\": \"Advanced knowledge of one or more of the following frontend languages: HTML5, CSS, JavaScript, PHP, and JQuery\"," +
-                "        \"type\": \"unstyled\"," +
-                "        \"depth\": 0," +
-                "        \"inlineStyleRanges\": []," +
-                "        \"entityRanges\": []," +
-                "        \"data\": {}" +
-                "      }," +
-                "      {" +
-                "        \"key\": \"bav5m\"," +
-                "        \"text\": \"Proficient in one or more of the following backend languages: Java, Python, Rails, Ruby, .NET, and NodeJS\"," +
-                "        \"type\": \"unstyled\"," +
-                "        \"depth\": 0," +
-                "        \"inlineStyleRanges\": []," +
-                "        \"entityRanges\": []," +
-                "        \"data\": {}" +
-                "      }," +
-                "      {" +
-                "        \"key\": \"9344j\"," +
-                "        \"text\": \"Knowledge of database systems and SQL\"," +
-                "        \"type\": \"unstyled\"," +
-                "        \"depth\": 0," +
-                "        \"inlineStyleRanges\": []," +
-                "        \"entityRanges\": []," +
-                "        \"data\": {}" +
-                "      }," +
-                "      {" +
-                "        \"key\": \"fjcop\"," +
-                "        \"text\": \"Advanced troubleshooting skills\"," +
-                "        \"type\": \"unstyled\"," +
-                "        \"depth\": 0," +
-                "        \"inlineStyleRanges\": []," +
-                "        \"entityRanges\": []," +
-                "        \"data\": {}" +
-                "      }," +
-                "      {" +
-                "        \"key\": \"cf0u3\"," +
-                "        \"text\": \"Familiarity with JavaScript frameworks\"," +
-                "        \"type\": \"unstyled\"," +
-                "        \"depth\": 0," +
-                "        \"inlineStyleRanges\": []," +
-                "        \"entityRanges\": []," +
-                "        \"data\": {}" +
-                "      }," +
-                "      {" +
-                "        \"key\": \"fv6qt\"," +
-                "        \"text\": \"Good communication skills\"," +
-                "        \"type\": \"unstyled\"," +
-                "        \"depth\": 0," +
-                "        \"inlineStyleRanges\": []," +
-                "        \"entityRanges\": []," +
-                "        \"data\": {}" +
-                "      }" +
-                "    ]," +
-                "    \"entityMap\": {}" +
-                "  }";
-        planTest.setUserId(this.generateRandomString(10));
-        planTest.setCompanyId(this.generateRandomString(10) + "-company-test");
-        planTest.setTitle(title);
-        planTest.setCategory("programming");
-        planTest.setRegionalRestrictions("US, Argentina");
-        planTest.setHowToApply("https://about.google/apply");
-        planTest.setType("contract");
-        try {
-            planTest.setDetail(new ObjectMapper().readTree(detailString));
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
-        planTest.setSalaryFrom(100000);
-        planTest.setSalaryTo(120000);
-        planTest.setBenefits("Health insurance, 401k");
-        planTest.setPriorityResult(0);
-        planTest.setCreatedAt(System.currentTimeMillis());
-        planTest.setUpdatedAt(System.currentTimeMillis());
-        return planTest;
-    }
-
 }
