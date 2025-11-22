@@ -69,4 +69,11 @@ public class PlanService {
     public List<Plan> getByUserId(String userId) {
         return this.planRepository.findByUserId(userId);
     }
+
+    /**
+     * Retrieves a plan by userId and invoiceId.
+     */
+    public Optional<Plan> getByUserIdAndInvoiceId(String userId, UUID invoiceId) {
+        return this.planRepository.findByUserIdAndInvoiceId(userId, invoiceId);
+    }
 }

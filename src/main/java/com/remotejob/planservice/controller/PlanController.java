@@ -1,8 +1,16 @@
 package com.remotejob.planservice.controller;
 
+import com.remotejob.planservice.dto.PlanDto;
 import com.remotejob.planservice.dto.ResponseAPI;
 import com.remotejob.planservice.entity.Plan;
+import com.remotejob.planservice.mapper.PlanMapper;
 import com.remotejob.planservice.service.PlanService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -16,6 +24,7 @@ import java.util.UUID;
  */
 @Slf4j
 @RestController
+@Tag(name = "Plan")
 @RequestMapping("/api/v1/plan")
 public class PlanController {
     /**
@@ -24,9 +33,11 @@ public class PlanController {
      * of plan entities within the system.
      */
     private final PlanService planService;
+    private final PlanMapper planMapper;
 
-    public PlanController(PlanService planService) {
+    public PlanController(PlanService planService, PlanMapper planMapper) {
         this.planService = planService;
+        this.planMapper = planMapper;
     }
 
     /**
@@ -36,12 +47,13 @@ public class PlanController {
      * @return A ResponseAPI object containing an Optional with the Job if found,
      * or an empty Optional if not found.
      */
+    @Operation(summary = "Get plan by ID")
+    @ApiResponse(responseCode = "200", description = "Plan found",
+            content = @Content(schema = @Schema(implementation = PlanDto.class)))
     @GetMapping("/{id}")
-    public ResponseAPI<Optional<Plan>> getJobById(@PathVariable(value = "id") UUID id) {
-        return new ResponseAPI<>(
-                "Success",
-                this.planService.getById(id)
-        );
+    public ResponseAPI<Optional<PlanDto>> getById(@PathVariable(value = "id") UUID id) {
+        Optional<Plan> plan = this.planService.getById(id);
+        return new ResponseAPI<>("Success", plan.map(planMapper::toDto));
     }
 
     /**
@@ -50,43 +62,48 @@ public class PlanController {
      * @param userId The ID of the user whose plans are to be retrieved.
      * @return A ResponseAPI object containing a list of plans associated with the specified user ID.
      */
+    @Operation(summary = "Get plans by user ID")
+    @ApiResponse(responseCode = "200", description = "Plans for user",
+            content = @Content(schema = @Schema(implementation = PlanDto.class)))
     @PreAuthorize("hasAuthority('USER')")
     @GetMapping("/user/{userId}")
-    public ResponseAPI<List<Plan>> getByUserId(@PathVariable(value = "userId") String userId) {
-        return new ResponseAPI<>(
-                "Success",
-                this.planService.getByUserId(userId)
-        );
+    public ResponseAPI<List<PlanDto>> getByUserId(@PathVariable(value = "userId") String userId) {
+        List<PlanDto> result = this.planService.getByUserId(userId).stream()
+                .map(planMapper::toDto)
+                .toList();
+        return new ResponseAPI<>("Success", result);
     }
 
     /**
      * Creates a new plan or updates an existing one.
      *
-     * @param plan The Job object to be created or updated.
-     * @return A ResponseAPI object containing the created or updated Job.
+     * @param planDto The plan to be created or updated.
+     * @return A ResponseAPI object containing the created or updated plan.
      */
+    @Operation(summary = "Create a plan")
+    @ApiResponse(responseCode = "200", description = "Plan created",
+            content = @Content(schema = @Schema(implementation = PlanDto.class)))
     @PreAuthorize("hasAuthority('USER')")
     @PostMapping()
-    public ResponseAPI<Plan> create(@RequestBody Plan plan) {
-        return new ResponseAPI<>(
-                "Success",
-                planService.createOrUpdate(plan)
-        );
+    public ResponseAPI<PlanDto> create(@Valid @RequestBody PlanDto planDto) {
+        Plan saved = planService.createOrUpdate(planMapper.fromDto(planDto));
+        return new ResponseAPI<>("Success", planMapper.toDto(saved));
     }
 
     /**
      * Updates an existing plan.
      *
-     * @param plan The Job object to be updated.
-     * @return A ResponseAPI object containing the updated Job.
+     * @param planDto The plan to be updated.
+     * @return A ResponseAPI object containing the updated plan.
      */
+    @Operation(summary = "Update a plan")
+    @ApiResponse(responseCode = "200", description = "Plan updated",
+            content = @Content(schema = @Schema(implementation = PlanDto.class)))
     @PreAuthorize("hasAuthority('USER')")
     @PutMapping()
-    public ResponseAPI<Plan> update(@RequestBody Plan plan) {
-        return new ResponseAPI<>(
-                "Success",
-                planService.createOrUpdate(plan)
-        );
+    public ResponseAPI<PlanDto> update(@Valid @RequestBody PlanDto planDto) {
+        Plan saved = planService.createOrUpdate(planMapper.fromDto(planDto));
+        return new ResponseAPI<>("Success", planMapper.toDto(saved));
     }
 
     /**
@@ -95,13 +112,12 @@ public class PlanController {
      * @param id The UUID of the plan to delete.
      * @return A ResponseAPI object containing a success message and no data.
      */
+    @Operation(summary = "Delete a plan")
+    @ApiResponse(responseCode = "200", description = "Plan deleted")
     @PreAuthorize("hasAuthority('USER')")
     @DeleteMapping("/{id}")
-    public ResponseAPI<Plan> delete(@PathVariable(value = "id") UUID id) {
+    public ResponseAPI<PlanDto> delete(@PathVariable(value = "id") UUID id) {
         planService.delete(id);
-        return new ResponseAPI<>(
-                "Plan deleted successfully",
-                null
-        );
+        return new ResponseAPI<>("Plan deleted successfully", null);
     }
 }

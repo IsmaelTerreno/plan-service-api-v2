@@ -21,6 +21,7 @@ import java.util.List;
  * Configures our application with Spring Security to restrict access to our API endpoints.
  */
 @Configuration
+@org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity(prePostEnabled = true)
 public class SecurityConfig {
 
     /**
@@ -86,13 +87,12 @@ public class SecurityConfig {
                 // Authorize requests
                 .authorizeHttpRequests((authorize) -> authorize
                         .requestMatchers(HttpMethod.GET, "/api/v1/plan/{id}").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/plan/search").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/plan/user/{userId}").permitAll()
+                        // Removed unused search endpoint and enforced auth for user path
+                        .requestMatchers(HttpMethod.GET, "/api/v1/plan/user/{userId}").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/v1/plan").authenticated()
                         .requestMatchers(HttpMethod.PUT, "/api/v1/plan").authenticated()
                         .requestMatchers(HttpMethod.DELETE, "/api/v1/plan/{id}").authenticated()
-                        .requestMatchers("/actuator/health/**")
-                        .permitAll()
+                        .requestMatchers("/actuator/health/**").permitAll()
                 )
                 // Add JWT filter after UsernamePasswordAuthenticationFilter
                 .addFilterAfter(jwtFilter, UsernamePasswordAuthenticationFilter.class)
