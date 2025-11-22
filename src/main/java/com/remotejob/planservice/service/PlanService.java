@@ -56,7 +56,7 @@ public class PlanService {
      * @param id The UUID of the job to retrieve.
      * @return An Optional containing the Job if found, or an empty Optional if not found.
      */
-    public Optional<Plan> getJobById(UUID id) {
+    public Optional<Plan> getById(UUID id) {
         return this.planRepository.findById(id);
     }
 
@@ -66,7 +66,7 @@ public class PlanService {
      * @param userId The ID of the user whose jobs are to be retrieved.
      * @return A list of jobs associated with the specified user ID.
      */
-    public List<Plan> getJobsByUserId(String userId) {
+    public List<Plan> getByUserId(String userId) {
         return this.planRepository.findByUserId(userId);
     }
 }

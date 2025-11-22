@@ -40,7 +40,7 @@ class PlanServiceAPIApplicationTests extends TestUtils {
     }
 
     @Test
-    void shouldGetJobsByUserId() throws Exception {
+    void shouldGetByUserId() throws Exception {
         // Get JWT token
         String JWT = this.registerUserAndGetJWT();
         Plan newPlan = setupTestPlan(new Plan());
@@ -62,7 +62,7 @@ class PlanServiceAPIApplicationTests extends TestUtils {
     }
 
     @Test
-    void shouldGetJobById() throws Exception {
+    void shouldGetById() throws Exception {
         // Get JWT token
         String JWT = this.registerUserAndGetJWT();
         Plan newPlan = setupTestPlan(new Plan());

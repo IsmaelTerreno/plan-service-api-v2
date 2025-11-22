@@ -21,32 +21,18 @@ public class PlanController {
     /**
      * Represents a service responsible for managing job-related operations.
      * This service handles the creation, update, retrieval, and deletion
-     * of job entities within the system.
+     * of plan entities within the system.
      */
-    private final PlanService jobService;
+    private final PlanService planService;
 
-    public PlanController(PlanService jobService) {
-        this.jobService = jobService;
+    public PlanController(PlanService planService) {
+        this.planService = planService;
     }
 
     /**
-     * Endpoint to retrieve a list of jobs based on a search text.
+     * Retrieves a plan by its unique identifier.
      *
-     * @param textToSearch The string to be used as the search criteria.
-     * @return A ResponseAPI object containing a list of jobs that match the search criteria.
-     */
-    @GetMapping("/search")
-    public ResponseAPI<List<Plan>> getJobsBySearch(@RequestParam String textToSearch) {
-        return new ResponseAPI<>(
-                "Success",
-                this.jobService.getJobsBySearch(textToSearch)
-        );
-    }
-
-    /**
-     * Retrieves a job by its unique identifier.
-     *
-     * @param id The UUID of the job to retrieve.
+     * @param id The UUID of the plan to retrieve.
      * @return A ResponseAPI object containing an Optional with the Job if found,
      * or an empty Optional if not found.
      */
@@ -54,65 +40,65 @@ public class PlanController {
     public ResponseAPI<Optional<Plan>> getJobById(@PathVariable(value = "id") UUID id) {
         return new ResponseAPI<>(
                 "Success",
-                this.jobService.getJobById(id)
+                this.planService.getById(id)
         );
     }
 
     /**
-     * Retrieves a list of jobs associated with a specific user ID.
+     * Retrieves a list of plans associated with a specific user ID.
      *
-     * @param userId The ID of the user whose jobs are to be retrieved.
-     * @return A ResponseAPI object containing a list of jobs associated with the specified user ID.
+     * @param userId The ID of the user whose plans are to be retrieved.
+     * @return A ResponseAPI object containing a list of plans associated with the specified user ID.
      */
     @PreAuthorize("hasAuthority('USER')")
     @GetMapping("/user/{userId}")
-    public ResponseAPI<List<Plan>> getJobsByUserId(@PathVariable(value = "userId") String userId) {
+    public ResponseAPI<List<Plan>> getByUserId(@PathVariable(value = "userId") String userId) {
         return new ResponseAPI<>(
                 "Success",
-                this.jobService.getJobsByUserId(userId)
+                this.planService.getByUserId(userId)
         );
     }
 
     /**
-     * Creates a new job or updates an existing one.
+     * Creates a new plan or updates an existing one.
      *
      * @param plan The Job object to be created or updated.
      * @return A ResponseAPI object containing the created or updated Job.
      */
     @PreAuthorize("hasAuthority('USER')")
     @PostMapping()
-    public ResponseAPI<Plan> createJob(@RequestBody Plan plan) {
+    public ResponseAPI<Plan> create(@RequestBody Plan plan) {
         return new ResponseAPI<>(
                 "Success",
-                jobService.createOrUpdate(plan)
+                planService.createOrUpdate(plan)
         );
     }
 
     /**
-     * Updates an existing job.
+     * Updates an existing plan.
      *
      * @param plan The Job object to be updated.
      * @return A ResponseAPI object containing the updated Job.
      */
     @PreAuthorize("hasAuthority('USER')")
     @PutMapping()
-    public ResponseAPI<Plan> updateJob(@RequestBody Plan plan) {
+    public ResponseAPI<Plan> update(@RequestBody Plan plan) {
         return new ResponseAPI<>(
                 "Success",
-                jobService.createOrUpdate(plan)
+                planService.createOrUpdate(plan)
         );
     }
 
     /**
-     * Deletes a job by its unique identifier.
+     * Deletes a plan by its unique identifier.
      *
-     * @param id The UUID of the job to delete.
+     * @param id The UUID of the plan to delete.
      * @return A ResponseAPI object containing a success message and no data.
      */
     @PreAuthorize("hasAuthority('USER')")
     @DeleteMapping("/{id}")
-    public ResponseAPI<Plan> deleteJob(@PathVariable(value = "id") UUID id) {
-        jobService.delete(id);
+    public ResponseAPI<Plan> delete(@PathVariable(value = "id") UUID id) {
+        planService.delete(id);
         return new ResponseAPI<>(
                 "Plan deleted successfully",
                 null
