@@ -50,7 +50,7 @@ services:
       - remote-job-network
 
   plan-service-postgres:
-    image: postgres:16
+    image: postgres:latest
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
