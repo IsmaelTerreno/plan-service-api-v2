@@ -16,9 +16,15 @@ RUN mvn -B -q -e -DskipTests dependency:go-offline
 # Copy the project source
 COPY src src
 
-# Package the application
-RUN mvn -B -DskipTests clean package
-RUN cp /workspace/target/plan-service-api-0.0.1-SNAPSHOT.jar plan-service-api.jar
+# Build the application and robustly copy the produced jar (avoid brittle fixed name)
+# - We still set a deterministic finalName, but in case plugins change naming, we select the
+#   first non-sources/non-javadoc/non-original jar from target and copy it as plan-service-api.jar
+RUN mvn -B -DskipTests -DfinalName=plan-service-api clean package \
+    && echo "Built artifacts in target/:" \
+    && ls -al target \
+    && JAR_PATH=$(find target -maxdepth 1 -type f -name "*.jar" ! -name "*sources*" ! -name "*javadoc*" ! -name "*original*" | head -n1) \
+    && echo "Selecting jar: ${JAR_PATH}" \
+    && cp "${JAR_PATH}" /workspace/plan-service-api.jar
 
 # Runner: use lightweight JDK 22 base
 FROM eclipse-temurin:22-jdk AS runner
