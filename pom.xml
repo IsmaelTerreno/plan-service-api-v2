@@ -9,7 +9,7 @@
         <relativePath/>
     </parent>
     <groupId>com.remotejob</groupId>
-    <artifactId>plan-service-api</artifactId>
+    <artifactId>plan-service-api-v2</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>plan-service-api</name>
     <description>plan-service-api</description>
