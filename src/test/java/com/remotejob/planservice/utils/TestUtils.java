@@ -229,12 +229,17 @@ public class TestUtils {
         // Step 1: Convert the MvcResult to a string response.
         String responseString = getStringResponse(mvcResult);
 
-        // Step 3: Deserialize the JSON string into a ResponseAPI object with a list of the responseType.
-        ResponseAPI<List<T>> responseAPI = jsonMapper.readValue(responseString, new TypeReference<ResponseAPI<List<T>>>() {
-        });
+        // Step 2: Deserialize to a raw ResponseAPI (inner list elements may be LinkedHashMap due to type erasure).
+        ResponseAPI<List<Object>> raw = jsonMapper.readValue(responseString, new TypeReference<ResponseAPI<List<Object>>>() {});
 
-        // Step 4: Return the list from the ResponseAPI object if it's not null, otherwise return an empty list.
-        return responseAPI != null && responseAPI.getData() != null ? responseAPI.getData() : Collections.emptyList();
+        if (raw == null || raw.getData() == null) {
+            return Collections.emptyList();
+        }
+
+        // Step 3: Convert each element to the desired responseType explicitly.
+        return raw.getData().stream()
+                .map(elem -> jsonMapper.convertValue(elem, responseType))
+                .toList();
     }
 
     /**
