@@ -7,7 +7,9 @@ import com.remotejob.planservice.mapper.PlanMapper;
 import com.remotejob.planservice.service.PlanService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -85,7 +87,19 @@ public class PlanController {
             content = @Content(schema = @Schema(implementation = PlanDto.class)))
     @PreAuthorize("hasAuthority('USER')")
     @PostMapping()
-    public ResponseAPI<PlanDto> create(@Valid @RequestBody PlanDto planDto) {
+    public ResponseAPI<PlanDto> create(
+            @Valid
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    required = true,
+                    content = @Content(
+                            schema = @Schema(implementation = PlanDto.class),
+                            examples = @ExampleObject(
+                                    name = "CreatePlanExample",
+                                    summary = "Quick create example",
+                                    value = "{\n  \"userId\": \"user-12345\",\n  \"invoiceId\": \"f54a0b7c-12d3-4e5f-a6b7-8c9d0e1f2a3b\",\n  \"description\": \"Basic subscription plan\",\n  \"isActive\": true,\n  \"items\": {\n    \"planName\": \"basic\",\n    \"seats\": 1,\n    \"features\": [\"support\"]\n  },\n  \"status\": \"CREATED\",\n  \"durationInDays\": 30,\n  \"expiresAt\": \"2025-12-31T23:59:59Z\"\n}"
+                            )
+                    )
+            ) @org.springframework.web.bind.annotation.RequestBody PlanDto planDto) {
         Plan saved = planService.createOrUpdate(planMapper.fromDto(planDto));
         return new ResponseAPI<>("Success", planMapper.toDto(saved));
     }
@@ -101,7 +115,19 @@ public class PlanController {
             content = @Content(schema = @Schema(implementation = PlanDto.class)))
     @PreAuthorize("hasAuthority('USER')")
     @PutMapping()
-    public ResponseAPI<PlanDto> update(@Valid @RequestBody PlanDto planDto) {
+    public ResponseAPI<PlanDto> update(
+            @Valid
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    required = true,
+                    content = @Content(
+                            schema = @Schema(implementation = PlanDto.class),
+                            examples = @ExampleObject(
+                                    name = "UpdatePlanExample",
+                                    summary = "Quick update example",
+                                    value = "{\n  \"id\": \"8b0a1d1a-1a2b-4c3d-8e9f-1234567890ab\",\n  \"userId\": \"user-12345\",\n  \"invoiceId\": \"f54a0b7c-12d3-4e5f-a6b7-8c9d0e1f2a3b\",\n  \"description\": \"Basic subscription plan - updated\",\n  \"isActive\": false,\n  \"items\": {\n    \"planName\": \"basic\",\n    \"seats\": 2,\n    \"features\": [\"support\", \"export\"]\n  },\n  \"status\": \"PAID\",\n  \"durationInDays\": 60,\n  \"expiresAt\": \"2026-01-31T00:00:00Z\"\n}"
+                            )
+                    )
+            ) @org.springframework.web.bind.annotation.RequestBody PlanDto planDto) {
         Plan saved = planService.createOrUpdate(planMapper.fromDto(planDto));
         return new ResponseAPI<>("Success", planMapper.toDto(saved));
     }

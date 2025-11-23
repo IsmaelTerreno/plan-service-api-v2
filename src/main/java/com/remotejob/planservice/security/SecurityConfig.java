@@ -86,6 +86,13 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 // Authorize requests
                 .authorizeHttpRequests((authorize) -> authorize
+                        // Allow Swagger/OpenAPI docs publicly
+                        .requestMatchers(
+                                "/doc",
+                                "/swagger-ui.html",
+                                "/swagger-ui/**",
+                                "/v3/api-docs/**"
+                        ).permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/plan/{id}").permitAll()
                         // Removed unused search endpoint and enforced auth for user path
                         .requestMatchers(HttpMethod.GET, "/api/v1/plan/user/{userId}").authenticated()
