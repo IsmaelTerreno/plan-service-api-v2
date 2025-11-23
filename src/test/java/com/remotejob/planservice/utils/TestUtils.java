@@ -3,7 +3,8 @@ package com.remotejob.planservice.utils;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.gson.Gson;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.remotejob.planservice.dto.CreateRequest;
 import com.remotejob.planservice.dto.ResponseAPI;
 import lombok.Getter;
@@ -57,16 +58,29 @@ public class TestUtils {
     private String emailTestE2EClient;
     private String authToken;
 
+    // Reusable, properly configured ObjectMapper for tests (handles java.time.* types)
+    private final ObjectMapper jsonMapper;
+
+    public TestUtils() {
+        this.jsonMapper = new ObjectMapper();
+        this.jsonMapper.registerModule(new JavaTimeModule());
+        this.jsonMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+    }
+
     /**
-     * Converts an object to its JSON representation using the Gson library.
+     * Converts an object to its JSON representation using Jackson, with proper support
+     * for Java Time types like {@link java.time.Instant}.
      *
      * @param <T>    the type of the object to be converted
      * @param object the object to be converted to JSON
      * @return the JSON string representation of the object
      */
     public <T> String convertToJson(T object) {
-        Gson gson = new Gson();
-        return gson.toJson(object);
+        try {
+            return jsonMapper.writeValueAsString(object);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Failed to serialize object to JSON: " + e.getMessage(), e);
+        }
     }
 
     /**
@@ -167,11 +181,8 @@ public class TestUtils {
         // Step 1: Convert the MvcResult to a string response.
         String responseString = getStringResponse(mvcResult);
 
-        // Step 2: Initialize an ObjectMapper instance for JSON processing.
-        ObjectMapper objectMapper = new ObjectMapper();
-
         // Step 3: Deserialize the JSON string into a ResponseAPI<T> object.
-        ResponseAPI<T> responseAPI = objectMapper.readValue(responseString, new TypeReference<ResponseAPI<T>>() {
+        ResponseAPI<T> responseAPI = jsonMapper.readValue(responseString, new TypeReference<ResponseAPI<T>>() {
         });
 
         // Step 4: Return the message from the ResponseAPI object if it's not null, otherwise return null.
@@ -192,16 +203,13 @@ public class TestUtils {
         // Step 1: Convert the MvcResult to a string response.
         String responseString = getStringResponse(mvcResult);
 
-        // Step 2: Initialize an ObjectMapper instance for JSON processing.
-        ObjectMapper objectMapper = new ObjectMapper();
-
         // Step 3: Deserialize the JSON string into a ResponseAPI<T> object.
-        ResponseAPI<T> responseAPI = objectMapper.readValue(responseString, new TypeReference<>() {
+        ResponseAPI<T> responseAPI = jsonMapper.readValue(responseString, new TypeReference<>() {
         });
 
         // Step 4: Return the message from the ResponseAPI object if it's not null, otherwise return null.
         return responseAPI != null ?
-                objectMapper.convertValue(responseAPI.getData(), responseType) :
+                jsonMapper.convertValue(responseAPI.getData(), responseType) :
                 null;
 
     }
@@ -221,11 +229,8 @@ public class TestUtils {
         // Step 1: Convert the MvcResult to a string response.
         String responseString = getStringResponse(mvcResult);
 
-        // Step 2: Initialize an ObjectMapper instance for JSON processing.
-        ObjectMapper objectMapper = new ObjectMapper();
-
         // Step 3: Deserialize the JSON string into a ResponseAPI object with a list of the responseType.
-        ResponseAPI<List<T>> responseAPI = objectMapper.readValue(responseString, new TypeReference<ResponseAPI<List<T>>>() {
+        ResponseAPI<List<T>> responseAPI = jsonMapper.readValue(responseString, new TypeReference<ResponseAPI<List<T>>>() {
         });
 
         // Step 4: Return the list from the ResponseAPI object if it's not null, otherwise return an empty list.
