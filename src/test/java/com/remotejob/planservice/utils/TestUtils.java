@@ -100,6 +100,21 @@ public class TestUtils {
     }
 
     /**
+     * Executes a PATCH request with the specified content and URL, and returns the result.
+     *
+     * @param content the content to be included in the request body
+     * @param url     the URL to which the request is sent
+     * @return the result of the executed request
+     * @throws Exception if an error occurs during the request execution
+     */
+    public ResultActions performPatchRequest(String content, String url, String jwtToUse) throws Exception {
+        return this.mockMvc.perform(patch(url)
+                .content(content)
+                .header(AUTHORIZATION_HEADER, BEARER_TOKEN_PREFIX + jwtToUse)
+                .contentType(CONTENT_TYPE_JSON));
+    }
+
+    /**
      * Executes a GET request to the specified URL and returns the result.
      *
      * @param url the URL to which the GET request is performed

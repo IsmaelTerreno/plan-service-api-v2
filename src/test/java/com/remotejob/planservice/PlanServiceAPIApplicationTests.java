@@ -128,6 +128,43 @@ class PlanServiceAPIApplicationTests extends TestUtils {
         assert "Plan deleted successfully".equals(message);
     }
 
+    @Test
+    void shouldPatchPlanPartialUpdate() throws Exception {
+        String jwt = this.registerUserAndGetJWT();
+        // Create initial plan
+        PlanDto newPlan = buildTestPlanDto(null);
+        String body = convertToJson(newPlan);
+
+        MvcResult createdRes = performPostRequest(body, "/api/v1/plan", jwt)
+                .andDo(print())
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andReturn();
+        PlanDto created = getDataResponse(createdRes, PlanDto.class);
+
+        // Build a PATCH payload to modify only description and isActive
+        ObjectMapper mapper = new ObjectMapper();
+        ObjectNode patch = mapper.createObjectNode();
+        patch.put("description", "Patched description");
+        patch.put("isActive", false);
+        String patchBody = mapper.writeValueAsString(patch);
+
+        // Execute PATCH
+        MvcResult patchedRes = performPatchRequest(patchBody, "/api/v1/plan/" + created.id, jwt)
+                .andDo(print())
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andReturn();
+
+        PlanDto patched = getDataResponse(patchedRes, PlanDto.class);
+        assert patched != null;
+        assert created.id.equals(patched.id);
+        assert "Patched description".equals(patched.description);
+        assert Boolean.FALSE.equals(patched.isActive);
+        // Ensure a field we didn't set remains unchanged (durationInDays)
+        assert created.durationInDays.equals(patched.durationInDays);
+        // And invoiceId unchanged
+        assert created.invoiceId.equals(patched.invoiceId);
+    }
+
     private PlanDto buildTestPlanDto(UUID id) throws Exception {
         ObjectMapper mapper = new ObjectMapper();
         ObjectNode items = mapper.createObjectNode();

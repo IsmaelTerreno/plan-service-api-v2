@@ -59,7 +59,7 @@ public class SecurityConfig {
         );
         corsConfiguration.setAllowedOrigins(allowedOrigins);
         corsConfiguration.setAllowCredentials(true);
-        corsConfiguration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE"));
+        corsConfiguration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE"));
         corsConfiguration.applyPermitDefaultValues();
         UrlBasedCorsConfigurationSource corsSource = new UrlBasedCorsConfigurationSource();
         corsSource.registerCorsConfiguration("/**", corsConfiguration);
@@ -98,6 +98,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/plan/user/{userId}").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/v1/plan").authenticated()
                         .requestMatchers(HttpMethod.PUT, "/api/v1/plan").authenticated()
+                        .requestMatchers(HttpMethod.PATCH, "/api/v1/plan/{id}").authenticated()
                         .requestMatchers(HttpMethod.DELETE, "/api/v1/plan/{id}").authenticated()
                         .requestMatchers("/actuator/health/**").permitAll()
                 )

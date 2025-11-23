@@ -1,5 +1,6 @@
 package com.remotejob.planservice.service;
 
+import com.remotejob.planservice.dto.PlanPatchDto;
 import com.remotejob.planservice.entity.Plan;
 import com.remotejob.planservice.repository.PlanRepository;
 import org.springframework.stereotype.Service;
@@ -75,5 +76,28 @@ public class PlanService {
      */
     public Optional<Plan> getByUserIdAndInvoiceId(String userId, UUID invoiceId) {
         return this.planRepository.findByUserIdAndInvoiceId(userId, invoiceId);
+    }
+
+    /**
+     * Partially updates a plan with the non-null fields provided in the patch DTO.
+     *
+     * @param id    the plan id to update
+     * @param patch the fields to apply (only non-null values will be updated)
+     * @return the updated plan, or empty if not found
+     */
+    public Optional<Plan> partialUpdate(UUID id, PlanPatchDto patch) {
+        Optional<Plan> existingOpt = planRepository.findById(id);
+        if (existingOpt.isEmpty()) {
+            return Optional.empty();
+        }
+        Plan plan = existingOpt.get();
+        if (patch.description != null) plan.setDescription(patch.description);
+        if (patch.isActive != null) plan.setIsActive(patch.isActive);
+        if (patch.items != null) plan.setItems(patch.items);
+        if (patch.status != null) plan.setStatus(patch.status);
+        if (patch.durationInDays != null) plan.setDurationInDays(patch.durationInDays);
+        if (patch.expiresAt != null) plan.setExpiresAt(patch.expiresAt);
+        Plan saved = planRepository.save(plan);
+        return Optional.of(saved);
     }
 }

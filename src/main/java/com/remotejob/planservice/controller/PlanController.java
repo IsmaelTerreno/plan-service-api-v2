@@ -2,6 +2,7 @@ package com.remotejob.planservice.controller;
 
 import com.remotejob.planservice.dto.PlanDto;
 import com.remotejob.planservice.dto.ResponseAPI;
+import com.remotejob.planservice.dto.PlanPatchDto;
 import com.remotejob.planservice.entity.Plan;
 import com.remotejob.planservice.mapper.PlanMapper;
 import com.remotejob.planservice.service.PlanService;
@@ -145,5 +146,35 @@ public class PlanController {
     public ResponseAPI<PlanDto> delete(@PathVariable(value = "id") UUID id) {
         planService.delete(id);
         return new ResponseAPI<>("Plan deleted successfully", null);
+    }
+
+    /**
+     * Partially updates fields of an existing plan. Only non-null fields in the payload are applied.
+     *
+     * @param id   The UUID of the plan to update.
+     * @param patch The fields to update.
+     * @return A ResponseAPI containing the updated plan, or null if not found.
+     */
+    @Operation(summary = "Partially update a plan")
+    @ApiResponse(responseCode = "200", description = "Plan patched",
+            content = @Content(schema = @Schema(implementation = PlanDto.class)))
+    @PreAuthorize("hasAuthority('USER')")
+    @PatchMapping("/{id}")
+    public ResponseAPI<PlanDto> patch(
+            @PathVariable("id") UUID id,
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    required = true,
+                    content = @Content(
+                            schema = @Schema(implementation = PlanPatchDto.class),
+                            examples = @ExampleObject(
+                                    name = "PatchPlanExample",
+                                    summary = "Quick patch example",
+                                    value = "{\n  \"description\": \"Patched description\",\n  \"isActive\": false,\n  \"status\": \"PAID\"\n}"
+                            )
+                    )
+            ) @org.springframework.web.bind.annotation.RequestBody PlanPatchDto patch
+    ) {
+        Optional<Plan> updated = planService.partialUpdate(id, patch);
+        return new ResponseAPI<>("Success", updated.map(planMapper::toDto).orElse(null));
     }
 }
