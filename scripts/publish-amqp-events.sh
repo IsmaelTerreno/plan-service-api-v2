@@ -81,6 +81,10 @@ publish_to_queue() {
   local queue_name="$1"; shift
   local json_payload="$1"; shift
 
+  # Echo the JSON payload that will be sent (for visibility/debugging)
+  info "Preparing to publish JSON payload to queue '${queue_name}':"
+  printf '%s\n' "$json_payload"
+
   local b64
   b64=$(printf '%s' "$json_payload" | base64_payload)
 
