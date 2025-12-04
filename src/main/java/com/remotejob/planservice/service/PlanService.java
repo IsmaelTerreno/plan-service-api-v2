@@ -3,6 +3,8 @@ package com.remotejob.planservice.service;
 import com.remotejob.planservice.dto.PlanPatchDto;
 import com.remotejob.planservice.entity.Plan;
 import com.remotejob.planservice.repository.PlanRepository;
+import com.remotejob.planservice.util.CorrelationContext;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -14,6 +16,7 @@ import java.util.UUID;
  * PlanRepository to perform CRUD operations and provides methods to retrieve jobs based
  * on various criteria.
  */
+@Slf4j
 @Service
 public class PlanService {
     private final PlanRepository planRepository;
@@ -29,7 +32,10 @@ public class PlanService {
      * @return A list of all jobs available in the repository.
      */
     public List<Plan> findAll() {
-        return this.planRepository.findAll();
+        log.debug("📋 [PLAN] Fetching all plans");
+        List<Plan> plans = this.planRepository.findAll();
+        log.debug("📋 [PLAN] Found {} plans", plans.size());
+        return plans;
     }
 
     /**
@@ -39,7 +45,28 @@ public class PlanService {
      * @return The saved Job object.
      */
     public Plan createOrUpdate(Plan plan) {
-        return this.planRepository.save(plan);
+        boolean isNew = (plan.getId() == null);
+        
+        if (isNew) {
+            log.info("💾 [PLAN] Creating new plan | userId={} | invoiceId={} | isActive={}", 
+                    plan.getUserId(), plan.getInvoiceId(), plan.getIsActive());
+        } else {
+            log.info("💾 [PLAN] Updating existing plan | planId={} | userId={} | invoiceId={} | isActive={}", 
+                    plan.getId(), plan.getUserId(), plan.getInvoiceId(), plan.getIsActive());
+        }
+        
+        Plan saved = this.planRepository.save(plan);
+        CorrelationContext.setPlanId(saved.getId().toString());
+        
+        if (isNew) {
+            log.info("✅ [PLAN] Plan created | planId={} | userId={} | invoiceId={} | status={} | isActive={}", 
+                    saved.getId(), saved.getUserId(), saved.getInvoiceId(), saved.getStatus(), saved.getIsActive());
+        } else {
+            log.info("✅ [PLAN] Plan updated | planId={} | status={} | isActive={}", 
+                    saved.getId(), saved.getStatus(), saved.getIsActive());
+        }
+        
+        return saved;
     }
 
     /**
@@ -48,7 +75,9 @@ public class PlanService {
      * @param id The UUID of the job to delete.
      */
     public void delete(UUID id) {
+        log.info("🗑️  [PLAN] Deleting plan | planId={}", id);
         this.planRepository.deleteById(id);
+        log.info("✅ [PLAN] Plan deleted | planId={}", id);
     }
 
     /**
@@ -58,7 +87,15 @@ public class PlanService {
      * @return An Optional containing the Job if found, or an empty Optional if not found.
      */
     public Optional<Plan> getById(UUID id) {
-        return this.planRepository.findById(id);
+        log.debug("🔍 [PLAN] Looking up plan by ID | planId={}", id);
+        Optional<Plan> plan = this.planRepository.findById(id);
+        if (plan.isPresent()) {
+            log.debug("✅ [PLAN] Plan found | planId={} | userId={} | invoiceId={}", 
+                    id, plan.get().getUserId(), plan.get().getInvoiceId());
+        } else {
+            log.debug("⚠️  [PLAN] Plan not found | planId={}", id);
+        }
+        return plan;
     }
 
     /**
@@ -68,14 +105,25 @@ public class PlanService {
      * @return A list of jobs associated with the specified user ID.
      */
     public List<Plan> getByUserId(String userId) {
-        return this.planRepository.findByUserId(userId);
+        log.debug("🔍 [PLAN] Looking up plans by user | userId={}", userId);
+        List<Plan> plans = this.planRepository.findByUserId(userId);
+        log.debug("📋 [PLAN] Found {} plans for user | userId={} | planCount={}", userId, plans.size());
+        return plans;
     }
 
     /**
      * Retrieves a plan by userId and invoiceId.
      */
     public Optional<Plan> getByUserIdAndInvoiceId(String userId, UUID invoiceId) {
-        return this.planRepository.findByUserIdAndInvoiceId(userId, invoiceId);
+        log.debug("🔍 [PLAN] Looking up plan by user and invoice | userId={} | invoiceId={}", userId, invoiceId);
+        Optional<Plan> plan = this.planRepository.findByUserIdAndInvoiceId(userId, invoiceId);
+        if (plan.isPresent()) {
+            log.debug("✅ [PLAN] Plan found | planId={} | userId={} | invoiceId={} | isActive={}", 
+                    plan.get().getId(), userId, invoiceId, plan.get().getIsActive());
+        } else {
+            log.debug("⚠️  [PLAN] Plan not found | userId={} | invoiceId={}", userId, invoiceId);
+        }
+        return plan;
     }
 
     /**
@@ -86,18 +134,47 @@ public class PlanService {
      * @return the updated plan, or empty if not found
      */
     public Optional<Plan> partialUpdate(UUID id, PlanPatchDto patch) {
+        log.info("🔄 [PLAN] Partial update requested | planId={}", id);
+        
         Optional<Plan> existingOpt = planRepository.findById(id);
         if (existingOpt.isEmpty()) {
+            log.warn("⚠️  [PLAN] Plan not found for partial update | planId={}", id);
             return Optional.empty();
         }
+        
         Plan plan = existingOpt.get();
-        if (patch.description != null) plan.setDescription(patch.description);
-        if (patch.isActive != null) plan.setIsActive(patch.isActive);
-        if (patch.items != null) plan.setItems(patch.items);
-        if (patch.status != null) plan.setStatus(patch.status);
-        if (patch.durationInDays != null) plan.setDurationInDays(patch.durationInDays);
-        if (patch.expiresAt != null) plan.setExpiresAt(patch.expiresAt);
+        StringBuilder changes = new StringBuilder();
+        
+        if (patch.description != null) {
+            changes.append("description, ");
+            plan.setDescription(patch.description);
+        }
+        if (patch.isActive != null) {
+            changes.append("isActive(").append(patch.isActive).append("), ");
+            plan.setIsActive(patch.isActive);
+        }
+        if (patch.items != null) {
+            changes.append("items, ");
+            plan.setItems(patch.items);
+        }
+        if (patch.status != null) {
+            changes.append("status(").append(patch.status).append("), ");
+            plan.setStatus(patch.status);
+        }
+        if (patch.durationInDays != null) {
+            changes.append("durationInDays(").append(patch.durationInDays).append("), ");
+            plan.setDurationInDays(patch.durationInDays);
+        }
+        if (patch.expiresAt != null) {
+            changes.append("expiresAt, ");
+            plan.setExpiresAt(patch.expiresAt);
+        }
+        
+        log.info("💾 [PLAN] Applying partial update | planId={} | changes={}", id, changes.toString());
         Plan saved = planRepository.save(plan);
+        log.info("✅ [PLAN] Partial update completed | planId={} | isActive={} | status={}", 
+                saved.getId(), saved.getIsActive(), saved.getStatus());
+        
         return Optional.of(saved);
     }
 }
