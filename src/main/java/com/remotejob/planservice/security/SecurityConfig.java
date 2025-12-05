@@ -21,6 +21,7 @@ import java.util.List;
  * Configures our application with Spring Security to restrict access to our API endpoints.
  */
 @Configuration
+@org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
 @org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity(prePostEnabled = true)
 public class SecurityConfig {
 
@@ -57,10 +58,13 @@ public class SecurityConfig {
         List<String> allowedOrigins = List.of(
                 corsAllowedOrigins.split(",")
         );
-        corsConfiguration.setAllowedOrigins(allowedOrigins);
+        // Use setAllowedOriginPatterns instead of setAllowedOrigins when using wildcards with credentials
+        corsConfiguration.setAllowedOriginPatterns(allowedOrigins);
         corsConfiguration.setAllowCredentials(true);
-        corsConfiguration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE"));
-        corsConfiguration.applyPermitDefaultValues();
+        corsConfiguration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        corsConfiguration.setAllowedHeaders(List.of("*"));
+        corsConfiguration.setExposedHeaders(List.of("Authorization"));
+        corsConfiguration.setMaxAge(3600L);
         UrlBasedCorsConfigurationSource corsSource = new UrlBasedCorsConfigurationSource();
         corsSource.registerCorsConfiguration("/**", corsConfiguration);
         return corsConfiguration;
@@ -78,14 +82,18 @@ public class SecurityConfig {
         // Define CORS configuration
         CorsConfiguration corsConfiguration = getCorsConfiguration();
         return http
+                // Configure CORS FIRST - before any other security checks
+                .cors(cors -> cors.configurationSource(request -> corsConfiguration))
                 // Disable default security settings
                 .httpBasic(AbstractHttpConfigurer::disable)
-                // Disable default security settings
+                // Disable default CSRF protection
                 .csrf(AbstractHttpConfigurer::disable)
                 // Configure session management with stateless sessions
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 // Authorize requests
-                .authorizeHttpRequests((authorize) -> authorize
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(HttpMethod.OPTIONS, "/**")
+                        .permitAll()
                         // Allow Swagger/OpenAPI docs publicly
                         .requestMatchers(
                                 "/doc",
@@ -93,19 +101,25 @@ public class SecurityConfig {
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**"
                         ).permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/plan/{id}").permitAll()
-                        // Removed unused search endpoint and enforced auth for user path
-                        .requestMatchers(HttpMethod.GET, "/api/v1/plan/user/{userId}").authenticated()
-                        .requestMatchers(HttpMethod.POST, "/api/v1/plan").authenticated()
-                        .requestMatchers(HttpMethod.PUT, "/api/v1/plan").authenticated()
-                        .requestMatchers(HttpMethod.PATCH, "/api/v1/plan/{id}").authenticated()
-                        .requestMatchers(HttpMethod.DELETE, "/api/v1/plan/{id}").authenticated()
-                        .requestMatchers("/actuator/health/**").permitAll()
+                        .requestMatchers("/doc/**", "/api-docs/**", "/swagger-ui/**", "/swagger-ui.html")
+                        .permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/plan/{id}")
+                        .permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/plan/user/{userId}")
+                        .authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/plan")
+                        .authenticated()
+                        .requestMatchers(HttpMethod.PUT, "/api/v1/plan")
+                        .authenticated()
+                        .requestMatchers(HttpMethod.PATCH, "/api/v1/plan/{id}")
+                        .authenticated()
+                        .requestMatchers(HttpMethod.DELETE, "/api/v1/plan/{id}")
+                        .authenticated()
+                        .requestMatchers("/actuator/health/**")
+                        .permitAll()
                 )
                 // Add JWT filter after UsernamePasswordAuthenticationFilter
                 .addFilterAfter(jwtFilter, UsernamePasswordAuthenticationFilter.class)
-                // Configure CORS
-                .cors(cors -> cors.configurationSource(request -> corsConfiguration))
                 .build();
     }
 

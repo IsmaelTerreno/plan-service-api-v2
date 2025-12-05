@@ -68,7 +68,7 @@ public class PlanController {
     @Operation(summary = "Get plans by user ID")
     @ApiResponse(responseCode = "200", description = "Plans for user",
             content = @Content(schema = @Schema(implementation = PlanDto.class)))
-    @PreAuthorize("hasRole('USER')")
+    @PreAuthorize("hasAuthority('ROLE_USER')")
     @GetMapping("/user/{userId}")
     public ResponseAPI<List<PlanDto>> getByUserId(@PathVariable(value = "userId") String userId) {
         List<PlanDto> result = this.planService.getByUserId(userId).stream()
@@ -86,7 +86,7 @@ public class PlanController {
     @Operation(summary = "Create a plan")
     @ApiResponse(responseCode = "200", description = "Plan created",
             content = @Content(schema = @Schema(implementation = PlanDto.class)))
-    @PreAuthorize("hasRole('USER')")
+    @PreAuthorize("hasAuthority('ROLE_USER')")
     @PostMapping()
     public ResponseAPI<PlanDto> create(
             @Valid
@@ -114,7 +114,7 @@ public class PlanController {
     @Operation(summary = "Update a plan")
     @ApiResponse(responseCode = "200", description = "Plan updated",
             content = @Content(schema = @Schema(implementation = PlanDto.class)))
-    @PreAuthorize("hasRole('USER')")
+    @PreAuthorize("hasAuthority('ROLE_USER')")
     @PutMapping()
     public ResponseAPI<PlanDto> update(
             @Valid
@@ -141,7 +141,7 @@ public class PlanController {
      */
     @Operation(summary = "Delete a plan")
     @ApiResponse(responseCode = "200", description = "Plan deleted")
-    @PreAuthorize("hasRole('USER')")
+    @PreAuthorize("hasAuthority('ROLE_USER')")
     @DeleteMapping("/{id}")
     public ResponseAPI<PlanDto> delete(@PathVariable(value = "id") UUID id) {
         planService.delete(id);
@@ -158,7 +158,7 @@ public class PlanController {
     @Operation(summary = "Partially update a plan")
     @ApiResponse(responseCode = "200", description = "Plan patched",
             content = @Content(schema = @Schema(implementation = PlanDto.class)))
-    @PreAuthorize("hasRole('USER')")
+    @PreAuthorize("hasAuthority('ROLE_USER')")
     @PatchMapping("/{id}")
     public ResponseAPI<PlanDto> patch(
             @PathVariable("id") UUID id,
