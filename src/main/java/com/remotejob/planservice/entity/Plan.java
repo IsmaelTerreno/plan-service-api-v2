@@ -50,4 +50,7 @@ public class Plan {
 
     @Column(name = "expires_at")
     private Instant expiresAt; // nullable
+
+    @Column(name = "job_id", nullable = true)
+    private String jobId;
 }

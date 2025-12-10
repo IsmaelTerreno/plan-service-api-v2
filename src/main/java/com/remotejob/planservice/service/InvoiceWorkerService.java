@@ -64,6 +64,7 @@ public class InvoiceWorkerService {
             if (event.status != null) plan.setStatus(event.status);
             if (event.isActive != null) plan.setIsActive(event.isActive);
             if (event.expiresAt != null) plan.setExpiresAt(event.expiresAt);
+            if (event.jobId != null) plan.setJobId(event.jobId);
 
             // Save updated plan
             log.info("🔄 [INVOICE->PLAN] Updating plan | planId={} | oldStatus={} | newStatus={} | oldIsActive={} | newIsActive={}", 
@@ -130,6 +131,7 @@ public class InvoiceWorkerService {
             plan.setStatus(event.status);
             plan.setDurationInDays(event.durationInDays);
             plan.setExpiresAt(event.expiresAt);
+            plan.setJobId(event.jobId);
 
             // Save plan
             log.info("💾 [INVOICE->PLAN] Saving plan | userId={} | invoiceId={} | isActive={} | status={}", 
