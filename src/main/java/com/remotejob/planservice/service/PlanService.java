@@ -127,6 +127,19 @@ public class PlanService {
     }
 
     /**
+     * Retrieves a list of plans associated with a specific job ID.
+     *
+     * @param jobId The ID of the job whose plans are to be retrieved.
+     * @return A list of plans associated with the specified job ID.
+     */
+    public List<Plan> getByJobId(String jobId) {
+        log.debug("🔍 [PLAN] Looking up plans by job | jobId={}", jobId);
+        List<Plan> plans = this.planRepository.findByJobId(jobId);
+        log.debug("📋 [PLAN] Found {} plans for job | jobId={} | planCount={}", jobId, plans.size());
+        return plans;
+    }
+
+    /**
      * Partially updates a plan with the non-null fields provided in the patch DTO.
      *
      * @param id    the plan id to update

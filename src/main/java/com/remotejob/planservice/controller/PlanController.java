@@ -77,6 +77,23 @@ public class PlanController {
     }
 
     /**
+     * Retrieves a list of plans associated with a specific job ID.
+     *
+     * @param jobId The ID of the job whose plans are to be retrieved.
+     * @return A ResponseAPI object containing a list of plans associated with the specified job ID.
+     */
+    @Operation(summary = "Get plans by job ID")
+    @ApiResponse(responseCode = "200", description = "Plans for job",
+            content = @Content(schema = @Schema(implementation = PlanDto.class)))
+    @GetMapping("/job/{jobId}")
+    public ResponseAPI<List<PlanDto>> getByJobId(@PathVariable(value = "jobId") String jobId) {
+        List<PlanDto> result = this.planService.getByJobId(jobId).stream()
+                .map(planMapper::toDto)
+                .toList();
+        return new ResponseAPI<>("Success", result);
+    }
+
+    /**
      * Creates a new plan or updates an existing one.
      *
      * @param planDto The plan to be created or updated.

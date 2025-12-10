@@ -22,4 +22,9 @@ public interface PlanRepository extends JpaRepository<Plan, UUID> {
      * Retrieves a plan by userId and invoiceId.
      */
     Optional<Plan> findByUserIdAndInvoiceId(String userId, UUID invoiceId);
+
+    /**
+     * Retrieves a list of plans associated with a specific job ID.
+     */
+    List<Plan> findByJobId(String jobId);
 }

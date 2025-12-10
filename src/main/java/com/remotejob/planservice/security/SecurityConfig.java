@@ -106,6 +106,8 @@ public class SecurityConfig {
                         .permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/plan/user/{userId}")
                         .permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/plan/job/{jobId}")
+                        .permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/plan")
                         .authenticated()
                         .requestMatchers(HttpMethod.PUT, "/api/v1/plan")

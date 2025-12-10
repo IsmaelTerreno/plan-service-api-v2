@@ -49,4 +49,9 @@ public class PlanDto {
             nullable = true,
             example = "2025-12-31T23:59:59Z")
     public Instant expiresAt;
+
+    @Schema(description = "Job ID associated with this plan",
+            nullable = true,
+            example = "job-456")
+    public String jobId;
 }

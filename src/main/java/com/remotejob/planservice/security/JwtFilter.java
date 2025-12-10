@@ -92,6 +92,7 @@ public class JwtFilter extends GenericFilterBean {
         if ("GET".equals(method)) {
             return path.matches("/api/v1/plan/[^/]+") || // /api/v1/plan/{id}
                    path.matches("/api/v1/plan/user/[^/]+") || // /api/v1/plan/user/{userId}
+                   path.matches("/api/v1/plan/job/[^/]+") || // /api/v1/plan/job/{jobId}
                    path.startsWith("/actuator/health") ||
                    path.startsWith("/doc") ||
                    path.startsWith("/swagger-ui") ||
