@@ -68,7 +68,6 @@ public class PlanController {
     @Operation(summary = "Get plans by user ID")
     @ApiResponse(responseCode = "200", description = "Plans for user",
             content = @Content(schema = @Schema(implementation = PlanDto.class)))
-    @PreAuthorize("hasAuthority('ROLE_USER')")
     @GetMapping("/user/{userId}")
     public ResponseAPI<List<PlanDto>> getByUserId(@PathVariable(value = "userId") String userId) {
         List<PlanDto> result = this.planService.getByUserId(userId).stream()

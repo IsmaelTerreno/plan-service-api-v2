@@ -18,6 +18,7 @@ load_env_variables() {
 # Build the Docker image
 build_docker_image() {
   docker build \
+      --no-cache \
       --build-arg SERVER_PORT_LISTENING_ARG="$SERVER_PORT_LISTENING" \
       --build-arg CORS_ALLOW_ORIGINS_ARG="$CORS_ALLOW_ORIGINS" \
       --build-arg HOST_DB_CONFIG_ARG="$HOST_DB_CONFIG" \

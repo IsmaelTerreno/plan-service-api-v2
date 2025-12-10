@@ -34,6 +34,7 @@ public class JwtFilter extends GenericFilterBean {
      * This method filters incoming requests to determine if they contain a valid JWT token.
      * If a valid token is found, it extracts the claims, generates the authentication object,
      * and sets it in the SecurityContextHolder. Finally, it proceeds with the filter chain.
+     * For public endpoints, the filter simply passes through without requiring authentication.
      *
      * @param request  the incoming request to be filtered
      * @param response the response associated with the request
@@ -44,14 +45,61 @@ public class JwtFilter extends GenericFilterBean {
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain fc)
             throws IOException, ServletException {
-        final String token = getTokenFromRequest((HttpServletRequest) request);
-        if (token != null && jwtProvider.validateToken(token)) {
+        HttpServletRequest httpRequest = (HttpServletRequest) request;
+        String requestURI = httpRequest.getRequestURI();
+        String method = httpRequest.getMethod();
+
+        log.info("Processing request to: {} {}", method, requestURI);
+
+        // Skip JWT validation for public endpoints
+        if (isPublicEndpoint(method, requestURI)) {
+            log.info("Public endpoint - skipping JWT validation");
+            fc.doFilter(request, response);
+            return;
+        }
+
+        final String token = getTokenFromRequest(httpRequest);
+
+        if (token == null) {
+            log.warn("No JWT token found in Authorization header");
+        } else if (!jwtProvider.validateToken(token)) {
+            log.warn("JWT token validation failed for request to: {}", requestURI);
+        } else {
             final Claims claims = jwtProvider.getAccessClaims(token);
             final JwtAuthentication jwtInfoToken = JwtUtils.generate(claims);
             jwtInfoToken.setAuthenticated(true);
             SecurityContextHolder.getContext().setAuthentication(jwtInfoToken);
+            log.info("JWT authentication successful for user: {} with roles: {}",
+                    jwtInfoToken.getUsername(), jwtInfoToken.getRoles());
         }
         fc.doFilter(request, response);
+    }
+
+    /**
+     * Checks if the given request path and method correspond to a public endpoint that doesn't require authentication.
+     *
+     * @param method the HTTP method (GET, POST, etc.)
+     * @param path the request URI path
+     * @return true if the endpoint is public, false otherwise
+     */
+    private boolean isPublicEndpoint(String method, String path) {
+        // OPTIONS requests are always public (CORS preflight)
+        if ("OPTIONS".equals(method)) {
+            return true;
+        }
+
+        // Public GET endpoints
+        if ("GET".equals(method)) {
+            return path.matches("/api/v1/plan/[^/]+") || // /api/v1/plan/{id}
+                   path.matches("/api/v1/plan/user/[^/]+") || // /api/v1/plan/user/{userId}
+                   path.startsWith("/actuator/health") ||
+                   path.startsWith("/doc") ||
+                   path.startsWith("/swagger-ui") ||
+                   path.startsWith("/v3/api-docs") ||
+                   path.startsWith("/api-docs");
+        }
+
+        return false;
     }
 
     /**
