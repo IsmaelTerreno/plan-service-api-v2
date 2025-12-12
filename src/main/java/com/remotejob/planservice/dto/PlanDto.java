@@ -54,4 +54,10 @@ public class PlanDto {
             nullable = true,
             example = "job-456")
     public String jobId;
+
+    @Schema(description = "Plan metadata storing features like logo display, colors, positioning",
+            nullable = true,
+            implementation = JsonNode.class,
+            example = "{\n  \"showLogo\": true,\n  \"brandColor\": \"#FF6B6B\",\n  \"highlightYellow\": true,\n  \"highlightBrandColor\": false,\n  \"showOnTop\": true\n}")
+    public JsonNode metadata;
 }

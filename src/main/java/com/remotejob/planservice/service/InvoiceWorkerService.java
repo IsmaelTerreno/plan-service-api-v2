@@ -156,11 +156,12 @@ public class InvoiceWorkerService {
             plan.setDurationInDays(event.durationInDays);
             plan.setExpiresAt(event.expiresAt);
             plan.setJobId(event.jobId);
+            plan.setMetadata(event.metadata);
 
             // Save plan
-            log.info("💾 [INVOICE->PLAN] Saving plan | userId={} | invoiceId={} | jobId={} | isActive={} | status={}", 
+            log.info("💾 [INVOICE->PLAN] Saving plan | userId={} | invoiceId={} | jobId={} | isActive={} | status={} | hasMetadata={}", 
                     event.userId, event.invoiceId, event.jobId != null ? event.jobId : "NULL",
-                    event.isActive, event.status);
+                    event.isActive, event.status, event.metadata != null);
             
             Plan saved = planService.createOrUpdate(plan);
             CorrelationContext.setPlanId(saved.getId().toString());

@@ -53,4 +53,9 @@ public class Plan {
 
     @Column(name = "job_id", nullable = true)
     private String jobId;
+
+    @Convert(converter = JsonDynamicConverter.class)
+    @Type(JsonBinaryType.class)
+    @Column(name = "metadata", columnDefinition = "jsonb", nullable = true)
+    private JsonNode metadata;
 }
