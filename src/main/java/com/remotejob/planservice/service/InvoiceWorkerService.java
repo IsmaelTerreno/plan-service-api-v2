@@ -26,10 +26,15 @@ public class InvoiceWorkerService {
         CorrelationContext.setInvoicePlanContext(event.userId, event.invoiceId);
         
         try {
-            log.info("📨 [INVOICE->PLAN] Status update received | userId={} | invoiceId={}", 
-                    event.userId, event.invoiceId);
+            log.info("📨 [INVOICE->PLAN] Status update received | userId={} | invoiceId={} | jobId={}", 
+                    event.userId, event.invoiceId, event.jobId != null ? event.jobId : "NOT_PROVIDED");
             log.debug("📋 [INVOICE->PLAN] Event payload | status={} | isActive={} | expiresAt={}",
                     event.status, event.isActive, event.expiresAt);
+            
+            if (event.jobId != null) {
+                log.info("📌 [PLAN-JOB] Job ID detected in status update | jobId={} | invoiceId={} | userId={}", 
+                        event.jobId, event.invoiceId, event.userId);
+            }
 
             // Validate required fields
             if (event.userId == null || event.invoiceId == null) {
@@ -59,6 +64,7 @@ public class InvoiceWorkerService {
             // Track changes
             String oldStatus = plan.getStatus();
             Boolean oldIsActive = plan.getIsActive();
+            String oldJobId = plan.getJobId();
             
             // Apply updates
             if (event.status != null) plan.setStatus(event.status);
@@ -67,13 +73,23 @@ public class InvoiceWorkerService {
             if (event.jobId != null) plan.setJobId(event.jobId);
 
             // Save updated plan
-            log.info("🔄 [INVOICE->PLAN] Updating plan | planId={} | oldStatus={} | newStatus={} | oldIsActive={} | newIsActive={}", 
-                    plan.getId(), oldStatus, plan.getStatus(), oldIsActive, plan.getIsActive());
+            log.info("🔄 [INVOICE->PLAN] Updating plan | planId={} | oldStatus={} | newStatus={} | oldIsActive={} | newIsActive={} | oldJobId={} | newJobId={}", 
+                    plan.getId(), oldStatus, plan.getStatus(), oldIsActive, plan.getIsActive(),
+                    oldJobId != null ? oldJobId : "NULL", plan.getJobId() != null ? plan.getJobId() : "NULL");
             
             Plan saved = planService.createOrUpdate(plan);
 
-            log.info("✅ [INVOICE->PLAN] Plan updated successfully | planId={} | status={} | isActive={}", 
-                    saved.getId(), saved.getStatus(), saved.getIsActive());
+            log.info("✅ [INVOICE->PLAN] Plan updated successfully | planId={} | status={} | isActive={} | jobId={}", 
+                    saved.getId(), saved.getStatus(), saved.getIsActive(), 
+                    saved.getJobId() != null ? saved.getJobId() : "NULL");
+            
+            if (saved.getJobId() != null && oldJobId == null) {
+                log.info("📌 [PLAN-JOB] Plan newly linked to job via status update | planId={} | jobId={}", 
+                        saved.getId(), saved.getJobId());
+            } else if (saved.getJobId() != null) {
+                log.info("📌 [PLAN-JOB] Plan job link maintained | planId={} | jobId={}", 
+                        saved.getId(), saved.getJobId());
+            }
             
         } catch (Exception ex) {
             log.error("❌ [INVOICE->PLAN] Error updating plan | userId={} | invoiceId={} | error={}", 
@@ -96,10 +112,18 @@ public class InvoiceWorkerService {
         }
         
         try {
-            log.info("📨 [INVOICE->PLAN] Plan creation request received | userId={} | invoiceId={}", 
-                    event.userId, event.invoiceId);
+            log.info("📨 [INVOICE->PLAN] Plan creation request received | userId={} | invoiceId={} | jobId={}", 
+                    event.userId, event.invoiceId, event.jobId != null ? event.jobId : "NOT_PROVIDED");
             log.debug("📋 [INVOICE->PLAN] Event payload | isActive={} | status={} | durationInDays={} | description={}", 
                     event.isActive, event.status, event.durationInDays, event.description);
+            
+            if (event.jobId != null) {
+                log.info("📌 [PLAN-JOB] Job ID detected in plan creation request | jobId={} | invoiceId={} | userId={}", 
+                        event.jobId, event.invoiceId, event.userId);
+            } else {
+                log.warn("⚠️ [PLAN-JOB] No job ID provided in plan creation request | invoiceId={} | userId={} | This plan will not be linked to a specific job", 
+                        event.invoiceId, event.userId);
+            }
 
             // Validate required fields
             if (event.userId == null || event.invoiceId == null) {
@@ -134,18 +158,26 @@ public class InvoiceWorkerService {
             plan.setJobId(event.jobId);
 
             // Save plan
-            log.info("💾 [INVOICE->PLAN] Saving plan | userId={} | invoiceId={} | isActive={} | status={}", 
-                    event.userId, event.invoiceId, event.isActive, event.status);
+            log.info("💾 [INVOICE->PLAN] Saving plan | userId={} | invoiceId={} | jobId={} | isActive={} | status={}", 
+                    event.userId, event.invoiceId, event.jobId != null ? event.jobId : "NULL",
+                    event.isActive, event.status);
             
             Plan saved = planService.createOrUpdate(plan);
             CorrelationContext.setPlanId(saved.getId().toString());
 
-            log.info("✅ [INVOICE->PLAN] Plan {} successfully | planId={} | userId={} | invoiceId={} | isActive={} | status={}", 
+            log.info("✅ [INVOICE->PLAN] Plan {} successfully | planId={} | userId={} | invoiceId={} | jobId={} | isActive={} | status={}", 
                     isUpdate ? "updated" : "created", 
-                    saved.getId(), saved.getUserId(), saved.getInvoiceId(), saved.getIsActive(), saved.getStatus());
+                    saved.getId(), saved.getUserId(), saved.getInvoiceId(), 
+                    saved.getJobId() != null ? saved.getJobId() : "NULL",
+                    saved.getIsActive(), saved.getStatus());
             log.debug("📊 [INVOICE->PLAN] Plan details | durationInDays={} | expiresAt={} | itemCount={}", 
                     saved.getDurationInDays(), saved.getExpiresAt(), 
                     saved.getItems() != null && saved.getItems().isArray() ? saved.getItems().size() : 0);
+            
+            if (saved.getJobId() != null) {
+                log.info("📌 [PLAN-JOB] Plan successfully linked to job | planId={} | jobId={} | invoiceId={}", 
+                        saved.getId(), saved.getJobId(), saved.getInvoiceId());
+            }
             
         } catch (Exception ex) {
             log.error("❌ [INVOICE->PLAN] Error creating/updating plan | userId={} | invoiceId={} | error={}", 
