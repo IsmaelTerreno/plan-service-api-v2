@@ -157,12 +157,13 @@ public class PlanService {
                         Instant.now()
                 );
         
-        log.debug("📋 [PLAN] Found {} active plans with job IDs", activePlans.size());
+        log.info("📋 [PLAN] Found {} active plans with job IDs (before filtering by sticky type)", activePlans.size());
         
         // Filter by sticky plan IDs (5, 6, 7) in metadata
         List<Plan> stickyPlans = activePlans.stream()
                 .filter(plan -> {
                     if (plan.getMetadata() == null) {
+                        log.debug("⚠️ [PLAN] Plan {} has no metadata", plan.getId());
                         return false;
                     }
                     
@@ -170,14 +171,28 @@ public class PlanService {
                     JsonNode idNode = plan.getMetadata().get("id");
                     if (idNode != null && idNode.isNumber()) {
                         int planId = idNode.asInt();
-                        return planId == 5 || planId == 6 || planId == 7;
+                        boolean isSticky = planId == 5 || planId == 6 || planId == 7;
+                        if (isSticky) {
+                            log.debug("✅ [PLAN] Plan {} is sticky (type {}), jobId={}", plan.getId(), planId, plan.getJobId());
+                        }
+                        return isSticky;
                     }
                     
                     return false;
                 })
                 .toList();
         
-        log.info("✅ [PLAN] Found {} active sticky plans", stickyPlans.size());
+        log.info("✅ [PLAN] Found {} active sticky plans (filtered from {} total active plans)", 
+                stickyPlans.size(), activePlans.size());
+        
+        // Log each sticky plan for debugging
+        stickyPlans.forEach(plan -> {
+            JsonNode idNode = plan.getMetadata().get("id");
+            int planType = idNode != null && idNode.isNumber() ? idNode.asInt() : -1;
+            log.info("📌 [PLAN] Sticky plan: id={}, type={}, jobId={}, expiresAt={}", 
+                    plan.getId(), planType, plan.getJobId(), plan.getExpiresAt());
+        });
+        
         return stickyPlans;
     }
 
