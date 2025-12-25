@@ -1,5 +1,6 @@
 package com.remotejob.planservice.service;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.remotejob.planservice.dto.PlanPatchDto;
 import com.remotejob.planservice.entity.Plan;
 import com.remotejob.planservice.repository.PlanRepository;
@@ -7,6 +8,7 @@ import com.remotejob.planservice.util.CorrelationContext;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -137,6 +139,46 @@ public class PlanService {
         List<Plan> plans = this.planRepository.findByJobId(jobId);
         log.debug("📋 [PLAN] Found {} plans for job | jobId={} | planCount={}", jobId, plans.size());
         return plans;
+    }
+
+    /**
+     * Retrieves all active sticky plans that haven't expired.
+     * Sticky plans are plans with types 5 (24h), 6 (1 week), or 7 (1 month) in metadata.
+     *
+     * @return A list of active sticky plans ordered by expiration date (longest duration first)
+     */
+    public List<Plan> getActiveStickyPlans() {
+        log.info("🔍 [PLAN] Fetching active sticky plans");
+        
+        // Fetch all active plans with job IDs that haven't expired
+        List<Plan> activePlans = this.planRepository
+                .findByIsActiveAndExpiresAtAfterAndJobIdIsNotNullOrderByExpiresAtDesc(
+                        true, 
+                        Instant.now()
+                );
+        
+        log.debug("📋 [PLAN] Found {} active plans with job IDs", activePlans.size());
+        
+        // Filter by sticky plan IDs (5, 6, 7) in metadata
+        List<Plan> stickyPlans = activePlans.stream()
+                .filter(plan -> {
+                    if (plan.getMetadata() == null) {
+                        return false;
+                    }
+                    
+                    // Check if metadata contains plan id 5, 6, or 7
+                    JsonNode idNode = plan.getMetadata().get("id");
+                    if (idNode != null && idNode.isNumber()) {
+                        int planId = idNode.asInt();
+                        return planId == 5 || planId == 6 || planId == 7;
+                    }
+                    
+                    return false;
+                })
+                .toList();
+        
+        log.info("✅ [PLAN] Found {} active sticky plans", stickyPlans.size());
+        return stickyPlans;
     }
 
     /**

@@ -94,6 +94,23 @@ public class PlanController {
     }
 
     /**
+     * Retrieves all active sticky plans that haven't expired.
+     * Sticky plans are plans with types 5 (24h), 6 (1 week), or 7 (1 month).
+     *
+     * @return A ResponseAPI object containing a list of active sticky plans.
+     */
+    @Operation(summary = "Get active sticky plans")
+    @ApiResponse(responseCode = "200", description = "Active sticky plans",
+            content = @Content(schema = @Schema(implementation = PlanDto.class)))
+    @GetMapping("/active-sticky")
+    public ResponseAPI<List<PlanDto>> getActiveStickyPlans() {
+        List<PlanDto> result = this.planService.getActiveStickyPlans().stream()
+                .map(planMapper::toDto)
+                .toList();
+        return new ResponseAPI<>("Success", result);
+    }
+
+    /**
      * Creates a new plan or updates an existing one.
      *
      * @param planDto The plan to be created or updated.
